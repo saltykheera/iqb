@@ -4,29 +4,46 @@ venv/
 env/
 
 # Python cache
-__pycache__/
-*.pyc
-*.pyo
-*.pyd
+**/__pycache__/
+**/*.pyc
+**/*.pyo
+**/*.pyd
 .Python
+
+# uv cache
+.uv/
 
 # Git
 .git/
 .gitignore
 
-# IDE
+# IDE / OS
 .vscode/
 .idea/
 *.swp
 *.swo
 *~
+**/.DS_Store
 
 # CI/CD
 .github/
 
-# Documentation
+# Tests — not needed in production images
+**/tests/
+**/*_test.py
+**/test_*.py
+**/.pytest_cache/
+
+# Docs and design files
+docs/
 *.md
 !prototype/README.md
+!mlabapi/README.md
+
+# Other workspace members not needed by mlabapi image
+prototype/
+analysis/
+data/
 
 # Data and analysis (not needed in container)
 data/

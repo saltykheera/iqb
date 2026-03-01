@@ -1,0 +1,15 @@
+[project]
+name = "mlabapi"
+version = "0.1.0"
+description = "FastAPI wrapper around the mlab-iqb library"
+requires-python = ">=3.13"
+dependencies = [
+    "fastapi>=0.115.0",
+    "uvicorn[standard]>=0.30.0",
+    "mlab-iqb",
+    "pandas>=2.0",
+    "pyarrow>=14.0",
+]
+
+[tool.uv.sources]
+mlab-iqb = { workspace = true }

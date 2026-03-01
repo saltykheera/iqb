@@ -1,0 +1,61 @@
+# Cloud Build configuration for mlabapi deployment to Cloud Run
+#
+# Manual deploy:
+#   gcloud builds submit --config=mlabapi/cloudbuild.yaml \
+#     --substitutions=_PROJECT_ID=your-project-id
+#
+# The build context is the repo root (same pattern as prototype/).
+
+substitutions:
+  _REGION: us-east1
+  _REPOSITORY: m-lab
+  _SERVICE_NAME: iqb-mlabapi
+  _MEMORY: 512Mi
+  _CPU: "1"
+
+steps:
+  # 1. Build the Docker image
+  - name: "gcr.io/cloud-builders/docker"
+    id: Build
+    args:
+      - "build"
+      - "-f"
+      - "mlabapi/Dockerfile"
+      - "-t"
+      - "${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_REPOSITORY}/${_SERVICE_NAME}:$BUILD_ID"
+      - "-t"
+      - "${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_REPOSITORY}/${_SERVICE_NAME}:latest"
+      - "."
+
+  # 2. Push image to Artifact Registry
+  - name: "gcr.io/cloud-builders/docker"
+    id: Push
+    args:
+      - "push"
+      - "${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_REPOSITORY}/${_SERVICE_NAME}:$BUILD_ID"
+    waitFor: ["Build"]
+
+  # 3. Deploy to Cloud Run
+  - name: "gcr.io/google.com/cloudsdktool/cloud-sdk"
+    id: Deploy
+    entrypoint: gcloud
+    args:
+      - "run"
+      - "deploy"
+      - "${_SERVICE_NAME}"
+      - "--image"
+      - "${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_REPOSITORY}/${_SERVICE_NAME}:$BUILD_ID"
+      - "--platform"
+      - "managed"
+      - "--region"
+      - "${_REGION}"
+      - "--allow-unauthenticated"
+      - "--memory=${_MEMORY}"
+      - "--cpu=${_CPU}"
+      - "--port=8000"
+      - "--project=${PROJECT_ID}"
+    waitFor: ["Push"]
+
+images:
+  - "${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_REPOSITORY}/${_SERVICE_NAME}:$BUILD_ID"
+  - "${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_REPOSITORY}/${_SERVICE_NAME}:latest"
