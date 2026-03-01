@@ -10,10 +10,13 @@ TAG="${1:-}"
 AZURE_APP_NAME="mlabapi"
 AZURE_RESOURCE_GROUP="container-app"
 
-# ── 1. Build & push to Docker Hub ─────────────────────────────
-echo "🔨 Building $IMAGE:latest (linux/amd64 + linux/arm64)..."
+# Timestamp tag so Azure always pulls a genuinely new image (never stale cache)
+DEPLOY_TAG="$(date -u +%Y%m%d-%H%M%S)"
 
-TAGS="-t $IMAGE:latest"
+# ── 1. Build & push to Docker Hub ─────────────────────────────
+echo "🔨 Building $IMAGE:$DEPLOY_TAG (linux/amd64 + linux/arm64)..."
+
+TAGS="-t $IMAGE:latest -t $IMAGE:$DEPLOY_TAG"
 if [ -n "$TAG" ]; then
   TAGS="$TAGS -t $IMAGE:$TAG"
 fi
@@ -25,14 +28,15 @@ docker buildx build \
   --push \
   .
 
-echo "✅ Pushed $IMAGE:latest${TAG:+ and $IMAGE:$TAG} to Docker Hub"
+echo "✅ Pushed $IMAGE:latest and $IMAGE:$DEPLOY_TAG to Docker Hub"
 
 # ── 2. Force Azure to pull the new image ──────────────────────
-echo "🚀 Redeploying Azure Container App '$AZURE_APP_NAME'..."
+# Using the timestamped tag (not :latest) so Azure detects a real image change
+echo "🚀 Redeploying Azure Container App '$AZURE_APP_NAME' → image tag :$DEPLOY_TAG ..."
 
 az containerapp update \
   --name "$AZURE_APP_NAME" \
   --resource-group "$AZURE_RESOURCE_GROUP" \
-  --image "$IMAGE:latest"
+  --image "$IMAGE:$DEPLOY_TAG"
 
-echo "✅ Azure Container App '$AZURE_APP_NAME' updated to $IMAGE:latest"
+echo "✅ Azure Container App '$AZURE_APP_NAME' updated to $IMAGE:$DEPLOY_TAG"

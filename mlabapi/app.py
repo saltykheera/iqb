@@ -14,11 +14,11 @@ app = FastAPI(
     version="0.1.0",
 )
 
-# enable CORS for all origins for testing purposes ; in production X
+# enable CORS for all origins
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
-    allow_credentials=True,
+    allow_credentials=False,
     allow_methods=["*"],
     allow_headers=["*"],
 )
